@@ -46,6 +46,31 @@ const firaSans = Fira_Sans({ subsets: ["latin"], weight: ["400"] });
 const mulish = Mulish({ subsets: ["latin"], weight: ["400"] });
 const workSans = Work_Sans({ subsets: ["latin"], weight: ["400"] });
 
+// Create a mapping of display names to normalized keys
+const fontNameMap = {
+  // Display fonts
+  Inter: "inter",
+  Poppins: "poppins",
+  Montserrat: "montserrat",
+  "Playfair Display": "playfairDisplay",
+  Oswald: "oswald",
+  Raleway: "raleway",
+  "DM Sans": "dmSans",
+  Bitter: "bitter",
+  // Body fonts
+  Roboto: "roboto",
+  Lato: "lato",
+  "Open Sans": "openSans",
+  Merriweather: "merriweather",
+  Quicksand: "quicksand",
+  Nunito: "nunito",
+  "Roboto Slab": "robotoSlab",
+  "Roboto Mono": "robotoMono",
+  "Fira Sans": "firaSans",
+  Mulish: "mulish",
+  "Work Sans": "workSans",
+} as const;
+
 // Group fonts for easier access
 const fonts = {
   display: {
@@ -92,19 +117,57 @@ export const fontPairings = [
 
 // Helper function to get font object by name
 export function getFontByName(fontName: string) {
-  // Normalize font name to match object keys
-  const normalizedName = fontName.toLowerCase().replace(/\s+/g, "");
+  console.log("Getting font for:", fontName);
 
-  // Check display fonts
+  // Use the mapping to get the correct key
+  const normalizedName = fontNameMap[fontName as keyof typeof fontNameMap];
+  console.log("Normalized name:", normalizedName);
+
+  if (!normalizedName) {
+    console.warn(
+      `Font name "${fontName}" not found in mapping, falling back to manual normalization`
+    );
+    // Fallback to the old normalization method
+    const fallbackName = fontName.toLowerCase().replace(/\s+/g, "");
+    console.log("Fallback normalized name:", fallbackName);
+
+    // Check display fonts
+    const displayFont =
+      fonts.display[fallbackName as keyof typeof fonts.display];
+    if (displayFont) {
+      console.log("Found in display fonts");
+      return displayFont;
+    }
+
+    // Check body fonts
+    const bodyFont = fonts.body[fallbackName as keyof typeof fonts.body];
+    if (bodyFont) {
+      console.log("Found in body fonts");
+      return bodyFont;
+    }
+
+    console.warn(`Font "${fontName}" not found, using Inter as fallback`);
+    return fonts.display.inter;
+  }
+
+  // Try display fonts first
   const displayFont =
     fonts.display[normalizedName as keyof typeof fonts.display];
-  if (displayFont) return displayFont;
+  if (displayFont) {
+    console.log("Found in display fonts");
+    return displayFont;
+  }
 
-  // Check body fonts
+  // Then try body fonts
   const bodyFont = fonts.body[normalizedName as keyof typeof fonts.body];
-  if (bodyFont) return bodyFont;
+  if (bodyFont) {
+    console.log("Found in body fonts");
+    return bodyFont;
+  }
 
-  // Return Inter as fallback
+  console.warn(
+    `Mapped font "${normalizedName}" not found, using Inter as fallback`
+  );
   return fonts.display.inter;
 }
 

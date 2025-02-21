@@ -19,44 +19,61 @@ const FontPairingApp = () => {
   const [bodyFontObj, setBodyFontObj] = useState<NextFont | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [debug, setDebug] = useState<string[]>([]);
+
+  const addDebugMessage = (message: string) => {
+    setDebug((prev) => [...prev, `${new Date().toISOString()}: ${message}`]);
+  };
 
   const generateFontPair = async () => {
     setIsLoading(true);
     setError(null);
-    console.log("Generating new font pair...");
+    setDebug([]);
+    addDebugMessage("Generating new font pair...");
 
     try {
-      console.log("Making API request to /api/fonts");
+      addDebugMessage("Making API request to /api/fonts");
       const response = await fetch("/api/fonts");
-      console.log("API Response status:", response.status);
+      addDebugMessage(`API Response status: ${response.status}`);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("API Error:", errorText);
+        addDebugMessage(`API Error: ${errorText}`);
         throw new Error(
           `Failed to fetch font pair: ${response.status} ${errorText}`
         );
       }
 
       const newFontPair: FontPair = await response.json();
-      console.log("Received font pair:", newFontPair);
+      addDebugMessage(`Received font pair: ${JSON.stringify(newFontPair)}`);
       setFontPair(newFontPair);
 
       // Get the preloaded font objects
+      addDebugMessage(`Loading header font: ${newFontPair.headerFont}`);
       const headerFont = getFontByName(newFontPair.headerFont);
+      addDebugMessage(
+        `Header font loaded: ${headerFont?.className || "no className"}`
+      );
+
+      addDebugMessage(`Loading body font: ${newFontPair.bodyFont}`);
       const bodyFont = getFontByName(newFontPair.bodyFont);
+      addDebugMessage(
+        `Body font loaded: ${bodyFont?.className || "no className"}`
+      );
 
       setHeaderFontObj(headerFont);
       setBodyFontObj(bodyFont);
+      addDebugMessage("Font objects updated");
     } catch (error) {
-      console.error("Detailed error:", error);
-      setError(
+      const errorMessage =
         error instanceof Error
           ? error.message
-          : "Failed to generate or load fonts. Please try again."
-      );
+          : "Failed to generate or load fonts";
+      addDebugMessage(`Error: ${errorMessage}`);
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
+      addDebugMessage("Font generation completed");
     }
   };
 
@@ -85,9 +102,26 @@ const FontPairingApp = () => {
       </div>
 
       <div className="mt-4 text-sm text-gray-600">
-        <p>Header Font: {fontPair.headerFont}</p>
-        <p>Body Font: {fontPair.bodyFont}</p>
+        <p>
+          Header Font: {fontPair.headerFont} (className:{" "}
+          {headerFontObj?.className || "none"})
+        </p>
+        <p>
+          Body Font: {fontPair.bodyFont} (className:{" "}
+          {bodyFontObj?.className || "none"})
+        </p>
       </div>
+
+      {process.env.NODE_ENV === "development" && debug.length > 0 && (
+        <div className="mt-8 p-4 bg-gray-100 rounded text-xs font-mono">
+          <h3 className="font-bold mb-2">Debug Log:</h3>
+          {debug.map((msg, i) => (
+            <div key={i} className="whitespace-pre-wrap">
+              {msg}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
